@@ -3,7 +3,7 @@ Version=1.0
 Type=Application
 Name=Toggle VPN
 Comment=Toggle ServiceTrade VPN
-Exec=/home/wally/ServiceTrade/code/toggle_vpn/toggle-vpn.sh
-Icon=/home/wally/ServiceTrade/code/toggle_vpn/openvpn.png
+Exec=sh -c "$HOME/bin/toggle-vpn.sh"
+Icon=openvpn
 Terminal=false
 
