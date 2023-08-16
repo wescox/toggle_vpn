@@ -3,8 +3,8 @@ A Linux Applet to quickly toggle OpenVPN on and off using your desktop environme
 
 ## Screenshots
 
-[Launcher](https://github.com/wescox/toggle_vpn/blob/master/screenshots/launcher.png)
-[Notification](https://github.com/wescox/toggle_vpn/blob/master/screenshots/notification.png)
+![Launcher](https://github.com/wescox/toggle_vpn/blob/master/screenshots/launcher.png)
+![Notification](https://github.com/wescox/toggle_vpn/blob/master/screenshots/notification.png)
 
 ## Installation
 
