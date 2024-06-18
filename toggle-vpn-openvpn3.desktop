@@ -1,9 +1,0 @@
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Toggle VPN
-Comment=Toggle ServiceTrade VPN
-Exec=sh -c "$HOME/bin/toggle-vpn.sh"
-Icon=openvpn
-Terminal=false
-

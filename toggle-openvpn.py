@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/bin/python
 
 import os, gi, requests, time, signal, subprocess, re, shlex
 gi.require_version("Gtk", "3.0")
@@ -8,38 +8,35 @@ from gi.repository import Gtk as gtk, AppIndicator3 as appindicator, Notify as n
 from pydbus import SystemBus as systembus, SessionBus as sessionbus
 
 
-APPINDICATOR_ID = "openvpn3tray"
-
 class Tray:
     def __init__(self):
         # initiate tray app
-        self.indicator = appindicator.Indicator.new(APPINDICATOR_ID, 'network-vpn-acquiring', appindicator.IndicatorCategory.APPLICATION_STATUS)
+        self.indicator = appindicator.Indicator.new("openvpntray", "network-vpn-acquiring", appindicator.IndicatorCategory.APPLICATION_STATUS)
         self.indicator.set_status(appindicator.IndicatorStatus.ACTIVE)
-        self.status = 'acquiring'
+
+        # get initial state
+        self.set_state()
+
+        # create menu based on state
         self.menu()
     
-        # initiate notification
-        #notify.init(APPINDICATOR_ID)
-    
-        # connect or disconnect from VPN
-        #self.vpn()
-    
         # initiate 15 minute IP check loop
-        glib.timeout_add_seconds(900, self.vpn) # 900 seconds = 15 minutes
+        glib.timeout_add_seconds(900, self.disconnect_check) # 900 seconds = 15 minutes
     
         # initiate GTK event loop
         # gtk.main()
-    
+
+
     def menu(self):
         menu = gtk.Menu()
 
         vpn_connect = gtk.MenuItem()
         if self.status == 'connected':
-            vpn_connect.set_label("Connect to VPN")
-            vpn_connect.connect('activate', self.vpn)
+            vpn_connect.set_label("Disconnect VPN")
+            vpn_connect.connect('activate', self.disconnect_vpn)
         elif self.status == 'disconnected':
             vpn_connect.set_label("Connect to VPN")
-            vpn_connect.connect('activate', self.vpn)
+            vpn_connect.connect('activate',self.connect_vpn)
         menu.append(vpn_connect)
 
         vpn_exit = gtk.MenuItem(label='Quit')
@@ -51,80 +48,108 @@ class Tray:
     
         return menu
     
-    def ipcheck(self):
-        vpn_ip = '52.6.171.48'
-        #local_ip = subprocess.getoutput("curl -s icanhazip.com")
-        res = requests.get("https://icanhazip.com")
-        local_ip = res.text
-        if local_ip == vpn_ip:
-            self.indicator.set_icon_full("network-vpn", "VPN Connected")
+
+    def set_state(self):
+        self.ip_check()
+        if self.connected:
+            self.indicator.set_icon_full("network-vpn", "ServiceTrade VPN")
             self.status = 'connected'
         else:
-            self.indicator.set_icon_full("network-offline", "VPN Disconnected")
+            self.indicator.set_icon_full("openvpn", "ServiceTrade VPN")
             self.status = 'disconnected'
+
+
+    def ip_check(self):
+        vpn_ip = '52.6.171.48'
+        res = requests.get("https://icanhazip.com")
+        local_ip = res.text.rstrip()
+        if local_ip == vpn_ip:
+            self.connected = True
+        else:
+            self.connected = False
+
+
+    def notify(self, message):
+        subprocess.Popen(["notify-send", "ServiceTrade VPN", message]) 
     
-        #return True if local_ip == vpn_ip else False
-        #return True
-    
-        # show notification for 3 seconds
-        #notification = notify.Notification.new('Test', 'Test2')
-        #notification.show()
-        #time.sleep(3)
-        #notification.close()
-    
-    def notify(self, title, message):
-        subprocess.Popen(["notify-send", title, message]) 
-        # show notification for 5 seconds
-        #notification = notify.Notification.new(title, body)
-        #notification.show()
-        #time.sleep(5)
-        #notification.close()
-    
-      
-    #def shell(cmd):
-    #    return subprocess.run(shlex.split(cmd), stdout=subprocess.PIPE).stdout.decode("utf-8")
-    
-    def connect_vpn(self):
-    
-        ## get list of open sessions
-        #sessions = re.findall("(?<=Path: ).*", shell("openvpn3 sessions-list"))
-        #
-        ## close any open sessions or open a new one 
-        #errors = ""
-        #if sessions and not connected:
-        #    for session in sessions:
-        #        cmd = f"openvpn3 session-manage --session-path {session} --disconnect"
-        #        stop = re.search("Initiated session shutdown", subprocess.getoutput(cmd))
-        #        if stop:
-        #            msg("ServiceTrade VPN", "Disconnected")
-        #        else:
-        #            errors += f"{session}\n"
-        #else:
-            cwd = os.getcwd()
-            # so i don't need to care about profile name as long as there's just one in cwd
-            profile = [profile for profile in os.listdir(cwd) if profile.endswith('.ovpn')][0]
-            #start = re.search("Client connected", shell(cmd))
-            start = subprocess.getoutput(f"openvpn3 session-start --config {profile}")
-            if "Client connected" not in start:
-                self.notify("ServiceTrade VPN", "Failed to connect")
-                self.indicator.set_icon_full("openvpn", "VPN disconnected")
-                self.notify("ServiceTrade VPN", "Failed to connect")
+
+    def disconnect_check(self):
+        self.notify('Test')
+        self.ip_check()
         
-        # must return true to keep 15 minute cycle going 
-        return True
+        # status changed to disconnected without input
+        if not self.connected and self.status == 'connected':
+            self.disconnect_vpn()
+
+        return True # must return True to keep loop going
+
+
     
-    
+    # this non sensical setup is simply to get the icons to update correctly
+    def connect_vpn(self,_):
+        self.indicator.set_icon_full("network-vpn-acquiring", "ServiceTrade VPN")
+        glib.timeout_add(100, self._connect_vpn)
+
+
+    def _connect_vpn(self):
+
+        cwd = os.path.dirname(os.path.realpath(__file__))
+        # so i don't need to care about profile name as long as there's just one in cwd
+        profile = [profile for profile in os.listdir(cwd) if profile.endswith('.ovpn')][0]
+
+        # do this twice in case the first one fails
+        subprocess.run(["openvpn3", "session-start", "--config", f"{cwd}/{profile}"])
+
+        idx = 10
+        time.sleep(2)
+        while idx > 0:
+            time.sleep(1)
+            self.ip_check()
+            if self.connected:
+                break
+            idx -= 1
+
+        self.set_state()
+        self.menu()
+
+        if not self.connected:
+            self.notify("Failed to connect")
+
+    # this non sensical setup is simply to get the icons to update correctly
+    def disconnect_vpn(self,_):
+        self.indicator.set_icon_full("network-vpn-acquiring", "ServiceTrade VPN")
+        glib.timeout_add(100, self._disconnect_vpn)
+
+
+    def _disconnect_vpn(self):
+
+        # get list of open sessions
+        sessions_list = subprocess.getoutput("openvpn3 sessions-list")
+        sessions = re.findall("(?<=Path: ).*", sessions_list)
+        
+        # close any open sessions or open a new one 
+        errors = ""
+        if sessions:
+            for session in sessions:
+                cmd = f"openvpn3 session-manage --session-path {session} --disconnect"
+                disconnect_session = re.search("Initiated session shutdown", subprocess.getoutput(cmd))
+                if not disconnect_session:
+                    errors += f"{session}\n"
+
+        self.set_state()
+        self.menu()
+
+        if self.connected: 
+            self.notify("Failed to disconnect")
+        elif not self.connected and len(errors):
+            self.notify("Disconnected but failed to close all sessions")
+
     
     def quit(self,_):
-        # add vpn disconnect
-        #notify.uninit()
+        self._disconnect_vpn()
         gtk.main_quit()
     
-    #def __del__():
-    #    # Remove the lock file when the program exits
-    #    os.close(lock_fd)
-    #    os.unlink(lock_file)
-    
+
 if __name__ == "__main__":
     
     # simply so that CTRL+C works if running from CLI
