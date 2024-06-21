@@ -1,6 +1,6 @@
 #!/bin/python
 
-import os, gi, requests, time, signal, subprocess, re, shlex
+import os, gi, requests, time, signal, subprocess, re
 gi.require_version("Gtk", "3.0")
 gi.require_version('AppIndicator3', '0.1')
 gi.require_version('Notify', '0.7')
@@ -96,7 +96,7 @@ class Tray:
         # so i don't need to care about profile name as long as there's just one in cwd
         profile = [profile for profile in os.listdir(cwd) if profile.endswith('.ovpn')][0]
 
-        # do this twice in case the first one fails
+        # TODO: do this twice in case the first one fails
         subprocess.run(["openvpn3", "session-start", "--config", f"{cwd}/{profile}"])
 
         idx = 10
