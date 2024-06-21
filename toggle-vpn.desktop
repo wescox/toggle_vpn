@@ -3,7 +3,7 @@ Version=1.0
 Type=Application
 Name=Toggle VPN
 Comment=Toggle ServiceTrade VPN
-Exec=python "/home/wally/.local/bin/toggle-openvpn.py"
+Exec=sh -c "$HOME/.local/bin/toggle-openvpn.py"
 Icon=openvpn
 Terminal=false
 

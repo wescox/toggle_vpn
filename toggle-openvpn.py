@@ -74,12 +74,11 @@ class Tray:
     
 
     def disconnect_check(self):
-        self.notify('Test')
         self.ip_check()
         
         # status changed to disconnected without input
         if not self.connected and self.status == 'connected':
-            self.disconnect_vpn()
+            self._disconnect_vpn()
 
         return True # must return True to keep loop going
 
