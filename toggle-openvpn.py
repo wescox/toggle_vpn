@@ -5,7 +5,6 @@ gi.require_version("Gtk", "3.0")
 gi.require_version('AppIndicator3', '0.1')
 gi.require_version('Notify', '0.7')
 from gi.repository import Gtk as gtk, AppIndicator3 as appindicator, Notify as notify, GLib as glib
-from pydbus import SystemBus as systembus, SessionBus as sessionbus
 
 
 class Tray:
@@ -21,11 +20,8 @@ class Tray:
         self.menu()
     
         # initiate 15 minute IP check loop
-        glib.timeout_add_seconds(900, self.disconnect_check) # 900 seconds = 15 minutes
+        glib.timeout_add_seconds(600, self.disconnect_check) # 600 seconds = 10 minutes
     
-        # initiate GTK event loop
-        # gtk.main()
-
 
     def menu(self):
         menu = gtk.Menu()
@@ -38,7 +34,17 @@ class Tray:
             vpn_connect.set_label("Connect to VPN")
             vpn_connect.connect('activate',self.connect_vpn)
         menu.append(vpn_connect)
+        
+        if self.status == 'connected':
+            validate = gtk.MenuItem(label='Validate connection')
+            validate.connect('activate', self.validate)
+            menu.append(validate)
 
+        # add separator
+        separator = gtk.SeparatorMenuItem()
+        menu.append(separator)
+
+        # add quit
         vpn_exit = gtk.MenuItem(label='Quit')
         vpn_exit.connect('activate', self.quit)
         menu.append(vpn_exit)
@@ -72,6 +78,14 @@ class Tray:
     def notify(self, message):
         subprocess.Popen(["notify-send", "ServiceTrade VPN", message]) 
     
+
+    def validate(self, _):
+        self.ip_check()
+        if self.connected:
+            self.notify("VPN connection still active")
+        else:
+            self._disconnect_vpn()
+
 
     def disconnect_check(self):
         self.ip_check()
