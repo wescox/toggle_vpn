@@ -1,5 +1,5 @@
 # ToggleVPN
-A Linux Applet to quickly toggle OpenVPN on and off using your desktop environment app launcher
+A Linux tray applet to quickly manage OpenVPN3 connections.  It can be launched using your DE's application launcher.   
 
 ## Screenshots
 
@@ -7,37 +7,55 @@ A Linux Applet to quickly toggle OpenVPN on and off using your desktop environme
 
 ## Installation
 
-There are scripts included which support either [OpenVPN 3](https://community.openvpn.net/openvpn/wiki/OpenVPN3Linux) or [Network Manager](https://wiki.archlinux.org/title/NetworkManager).  Visit the links for more information and installation instructions.  The ServiceTrade VPN profile is not compatible with the kernel implementation of OpenVPN or Network Manager as is.  You must edit the profile and remove the lines that start with "route".  Or you can use OpenVPN 3. 
+### Prequisites
+ - Install [OpenVPN 3](https://community.openvpn.net/openvpn/wiki/OpenVPN3Linux). Visit the link for more information and installation instructions.
+ - Install GTK+ libraries.  There's a good chance you already have these since many Linux apps rely on them.  You definitely do if you use GNOME DE. 
+ - Install Python 3, pip, and the below packages:
+    - [PyGObject](https://pypi.org/project/PyGObject/).         
+        ```pip
+        pip install PyGObject
+        ```
+        ```fedora
+        sudo dnf install python3-gobject
+        ```
+        ```ubuntu
+        sudo apt install python3-gi
+        ```
+    - [requests](https://pypi.org/project/requests/)
+        ```pip
+        pip install requests
+        ```
 
+### Steps
 Clone the repo.
 
-If you using Network Manager, the script assumes a profile has been imported with the name of 'ServiceTrade'.  You can use the GUI applet or nmcli with the commands below.  If you use a different name the script will need to be updated.
+Either move your VPN profile to the repo or edit the file path in the script to point to your VPN profile location.
 
+Make the script executable
 ```bash
-mv /path/to/profile.ovpn /path/to/ServiceTrade.ovpn
-nmcli connection import type openvpn file /path/to/ServiceTrade.ovpn
-```
-The above is not necessary for OpenVPN 3.  Just edit file path in the script to point to your VPN profile location.
-
-Make appropriate shell script executable
-```bash
-chmod u+x /path/to/toggle-vpn.sh
+chmod u+x /path/to/toggle-openvpn.py
 ```
 
-Symlink, move or copy the shell script.  I prefer symlinks.
+Symlink, move or copy the script.  I prefer symlinks.
 ```bash
-ln -sf /path/to/toggle-vpn.sh $HOME/bin
+ln -sf /path/to/toggle-vpn.sh $HOME/.local/bin
 ```
-You will need to make $HOME/bin if it does not exist and make sure $HOME/bin is in your PATH.  Bash does this by default (IIRC) whereas you will need to add to your ZSH config.  IIRC, it's already there but commented out.  You can really put this anywhere you want but this is the "Linuxy" location and you'll need to update the desktop file if you choose a different location.
+You will need to make $HOME/.local/bin if it does not exist and make sure it is in your PATH.  You could also use /usr/local/bin if you want the app to be available for all users.
 
 Symlink, move, or copy the appropriate desktop file and icon.  I prefer symlinks.
 ```bash
 ln -sf /path/to/toggle-vpn.desktop $HOME/.local/share/applications
 ln -sf /path/to/openvpn.png $HOME/.local/share/icons
 ```
+Again, you could use the /usr/local versions of the above as well.
 
 Finally, update your MIME type database
 ```bash
 update-desktop-database $HOME/.local/share/applications
 ```
-This doesn't work sometimes and you'll need to log out and back in to see changes take effect. 
+This doesn't work sometimes and you'll need to log out and back in to see changes take effect. I also have no idea if this command works in any DE other than GNOME.
+
+## Issues
+
+- The icons don't update quite as reliably as I'd like.  The GTK loop is asynchronous and I don't care enough to figure out how to manage that in Python.  
+- It won't automatically start at boot.  I think this is more of a GNOME or me problem.  YMMV.  It could always be setup as a systemd service rather than being launched as an application.
