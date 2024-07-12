@@ -1,6 +1,6 @@
 #!/bin/python
 
-import os, gi, requests, time, signal, subprocess, re
+import os, gi, requests, time, signal, subprocess, re, fcntl, sys
 gi.require_version("Gtk", "3.0")
 gi.require_version('AppIndicator3', '0.1')
 gi.require_version('Notify', '0.7')
@@ -158,15 +158,35 @@ class Tray:
             self.notify("Disconnected but failed to close all sessions")
 
     
-    def quit(self,_):
+    def cleanup(self):
+        if os.path.exists(self.lockfile):
+            os.remove(self.lockfile)
+        self.listener.stop()
+
+
+    def quit(self,_=None):
         self._disconnect_vpn()
         gtk.main_quit()
     
 
 if __name__ == "__main__":
     
-    # simply so that CTRL+C works if running from CLI
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-    
-    app = Tray()
-    gtk.main()
+    lockfile = '/tmp/toggle-openvpn.lock'
+    try:
+
+        # create lockfile
+        with open(lockfile, 'w') as lf:
+            fcntl.flock(lf, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            lf.write(str(os.getpid()))
+            lf.flush()
+
+            # simply so that CTRL+C works if running from CLI
+            signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+            app = Tray()
+            gtk.main()
+
+    except IOError:
+        print('App is already running')
+        sys.exit(1)
+        

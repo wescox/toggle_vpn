@@ -1,28 +1,30 @@
 # ToggleVPN
-A Linux tray applet to quickly manage OpenVPN3 connections.  It can be launched using your DE's application launcher.   
-
-## Screenshots
+A Linux tray applet to quickly manage OpenVPN3 connections.  It can be launched using your DE's application launcher. The app icon changes based on connection state so that you have a visual indication of current status.  The app also checks whether you're still connected every 10 minutes and will automatically close all sessions if not.    
 
 ![Launcher](https://github.com/wescox/toggle_vpn/blob/master/screenshots/launcher.png)
 
 ## Installation
 
 ### Prequisites
+ - If you are using GNOME you must have some sort of [extension](https://extensions.gnome.org/) installed to support tray apps.  I use [AppIndicator/KStatusNotifierItem Support](https://github.com/ubuntu/gnome-shell-extension-appindicator).  Visit links for more information and installation instructions. 
  - Install [OpenVPN 3](https://community.openvpn.net/openvpn/wiki/OpenVPN3Linux). Visit the link for more information and installation instructions.
- - Install GTK+ libraries.  There's a good chance you already have these since many Linux apps rely on them.  You definitely do if you use GNOME DE. 
+ - Install [GTK](https://www.gtk.org/) libraries.  There's a good chance you already have these since many Linux apps rely on them.  You definitely do if you use GNOME DE. Visit link for more information
  - Install Python 3, pip, and the below packages:
-    - [PyGObject](https://pypi.org/project/PyGObject/).         
-        ```pip
+    - [PyGObject](https://pypi.org/project/PyGObject/):
+        pip:
+        ```
         pip install PyGObject
         ```
-        ```fedora
+        Fedora:
+        ```
         sudo dnf install python3-gobject
         ```
-        ```ubuntu
+        Ubuntu/Debian variatns:
+        ```
         sudo apt install python3-gi
         ```
-    - [requests](https://pypi.org/project/requests/)
-        ```pip
+    - [requests](https://pypi.org/project/requests/):
+        ```
         pip install requests
         ```
 
