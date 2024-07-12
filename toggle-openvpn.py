@@ -158,11 +158,11 @@ class Tray:
             self.notify("Disconnected but failed to close all sessions")
 
 
-    def quit(self,_=None):
+    def quit(self,_):
         self._disconnect_vpn()
+        gtk.main_quit()
         if os.path.exists(self.lockfile):
             os.remove(self.lockfile)
-        gtk.main_quit()
     
 
 if __name__ == "__main__":
@@ -180,6 +180,7 @@ if __name__ == "__main__":
             signal.signal(signal.SIGINT, signal.SIG_DFL)
 
             app = Tray()
+            app.lockfile = lockfile
             gtk.main()
 
     except IOError:
