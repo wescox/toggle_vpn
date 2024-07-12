@@ -157,15 +157,11 @@ class Tray:
         elif not self.connected and len(errors):
             self.notify("Disconnected but failed to close all sessions")
 
-    
-    def cleanup(self):
-        if os.path.exists(self.lockfile):
-            os.remove(self.lockfile)
-        self.listener.stop()
-
 
     def quit(self,_=None):
         self._disconnect_vpn()
+        if os.path.exists(self.lockfile):
+            os.remove(self.lockfile)
         gtk.main_quit()
     
 
