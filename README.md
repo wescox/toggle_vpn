@@ -19,7 +19,7 @@ A Linux tray applet to quickly manage OpenVPN3 connections.  It can be launched 
         ```
         sudo dnf install python3-gobject
         ```
-        Ubuntu/Debian variatns:
+        Ubuntu/Debian variants:
         ```
         sudo apt install python3-gi
         ```
