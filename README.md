@@ -40,7 +40,7 @@ chmod u+x /path/to/toggle-openvpn.py
 
 Symlink, move or copy the script.  I prefer symlinks.
 ```bash
-ln -sf /path/to/toggle-vpn.sh $HOME/.local/bin
+ln -sf /path/to/toggle-openvpn.py $HOME/.local/bin
 ```
 You will need to make $HOME/.local/bin if it does not exist and make sure it is in your PATH.  You could also use /usr/local/bin if you want the app to be available for all users.
 
