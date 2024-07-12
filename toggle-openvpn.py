@@ -1,11 +1,10 @@
 #!/bin/python
 
-import os, gi, requests, time, signal, subprocess, re, shlex
+import os, gi, requests, time, signal, subprocess, re, fcntl, sys
 gi.require_version("Gtk", "3.0")
 gi.require_version('AppIndicator3', '0.1')
 gi.require_version('Notify', '0.7')
 from gi.repository import Gtk as gtk, AppIndicator3 as appindicator, Notify as notify, GLib as glib
-from pydbus import SystemBus as systembus, SessionBus as sessionbus
 
 
 class Tray:
@@ -21,11 +20,8 @@ class Tray:
         self.menu()
     
         # initiate 15 minute IP check loop
-        glib.timeout_add_seconds(900, self.disconnect_check) # 900 seconds = 15 minutes
+        glib.timeout_add_seconds(600, self.disconnect_check) # 600 seconds = 10 minutes
     
-        # initiate GTK event loop
-        # gtk.main()
-
 
     def menu(self):
         menu = gtk.Menu()
@@ -38,7 +34,17 @@ class Tray:
             vpn_connect.set_label("Connect to VPN")
             vpn_connect.connect('activate',self.connect_vpn)
         menu.append(vpn_connect)
+        
+        if self.status == 'connected':
+            validate = gtk.MenuItem(label='Validate connection')
+            validate.connect('activate', self.validate)
+            menu.append(validate)
 
+        # add separator
+        separator = gtk.SeparatorMenuItem()
+        menu.append(separator)
+
+        # add quit
         vpn_exit = gtk.MenuItem(label='Quit')
         vpn_exit.connect('activate', self.quit)
         menu.append(vpn_exit)
@@ -73,6 +79,14 @@ class Tray:
         subprocess.Popen(["notify-send", "ServiceTrade VPN", message]) 
     
 
+    def validate(self, _):
+        self.ip_check()
+        if self.connected:
+            self.notify("VPN connection still active")
+        else:
+            self._disconnect_vpn()
+
+
     def disconnect_check(self):
         self.ip_check()
         
@@ -96,7 +110,7 @@ class Tray:
         # so i don't need to care about profile name as long as there's just one in cwd
         profile = [profile for profile in os.listdir(cwd) if profile.endswith('.ovpn')][0]
 
-        # do this twice in case the first one fails
+        # TODO: do this twice in case the first one fails
         subprocess.run(["openvpn3", "session-start", "--config", f"{cwd}/{profile}"])
 
         idx = 10
@@ -144,15 +158,35 @@ class Tray:
             self.notify("Disconnected but failed to close all sessions")
 
     
-    def quit(self,_):
+    def cleanup(self):
+        if os.path.exists(self.lockfile):
+            os.remove(self.lockfile)
+        self.listener.stop()
+
+
+    def quit(self,_=None):
         self._disconnect_vpn()
         gtk.main_quit()
     
 
 if __name__ == "__main__":
     
-    # simply so that CTRL+C works if running from CLI
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-    
-    app = Tray()
-    gtk.main()
+    lockfile = '/tmp/toggle-openvpn.lock'
+    try:
+
+        # create lockfile
+        with open(lockfile, 'w') as lf:
+            fcntl.flock(lf, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            lf.write(str(os.getpid()))
+            lf.flush()
+
+            # simply so that CTRL+C works if running from CLI
+            signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+            app = Tray()
+            gtk.main()
+
+    except IOError:
+        print('App is already running')
+        sys.exit(1)
+        
